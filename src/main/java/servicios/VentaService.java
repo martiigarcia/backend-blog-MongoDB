@@ -4,6 +4,7 @@ import api.VentaServicio;
 import modelo.*;
 
 import javax.persistence.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +17,7 @@ public class VentaService implements VentaServicio {
         this.emf = Persistence.createEntityManagerFactory(servicio);
 
     }
+
     @Override
     public void realizarVenta(Long idCliente, List<Long> productosLong, Long idTarjeta) {
         this.em = emf.createEntityManager();
@@ -24,11 +26,11 @@ public class VentaService implements VentaServicio {
         try {
             tx.begin();
 
-            if(idCliente == null)
+            if (idCliente == null)
                 throw new RuntimeException("El cliente no puede ser nulo.");
-            if(productosLong.isEmpty())
+            if (productosLong.isEmpty())
                 throw new RuntimeException("El carrito no puede estar vacio.");
-            if(idTarjeta == null)
+            if (idTarjeta == null)
                 throw new RuntimeException("La tarjeta no debe ser vacia.");
 
             // validaciones:
@@ -57,11 +59,30 @@ public class VentaService implements VentaServicio {
             for (Producto producto : productosX) {
                 carrito.agregarProductoAlCarrito(producto);
             }
-
             Tienda tienda = em.find(Tienda.class, 13L);
             Venta venta = carrito.pagar(cliente, tienda.MarcaPromocionVigente(), tienda.TarjetaPromocionVigente(), tarjeta);
-            tienda.agregarVenta(venta);
 
+            LocalDate hoy = LocalDate.now();
+            TypedQuery<NumeroVenta> qnv = em.createQuery("select nv from NumeroVenta nv where nv.anio=:anio", NumeroVenta.class);
+            qnv.setParameter("anio", hoy.getYear());
+            qnv.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+
+            List<NumeroVenta> lista = qnv.getResultList();
+            System.out.println(lista);
+            NumeroVenta numeroVenta;
+            if (lista.isEmpty()) {
+                System.out.println("vacia");
+                numeroVenta = new NumeroVenta(1, hoy.getYear());
+                em.persist(numeroVenta);
+            } else {
+                System.out.println("llena");
+                numeroVenta = lista.get(0);
+                numeroVenta.numeroSiguiente();
+            }
+            System.out.println(numeroVenta.crearCodigo());
+
+            venta.setNumeroVenta(numeroVenta.crearCodigo());
+            tienda.agregarVenta(venta);
 
             tx.commit();
 
@@ -88,9 +109,9 @@ public class VentaService implements VentaServicio {
         try {
 
             tx.begin();
-            if(productosLong.isEmpty())
+            if (productosLong.isEmpty())
                 throw new RuntimeException("El carrito no puede estar vacio.");
-            if(idTarjeta == null)
+            if (idTarjeta == null)
                 throw new RuntimeException("La tarjeta no debe ser vacia.");
 
             //Devuelve el monto total aplicando los descuentos al día de la fecha
@@ -139,17 +160,24 @@ public class VentaService implements VentaServicio {
         List<Venta> ventas;
         try {
             tx.begin();
+/* *
 
+Por otro lado, para poder hacer funcionar el ejercicio sobre OptimisticLock con JPA, necesitan tener presente lo siguiente:
+1- Utilizar el método merge del EntityManager
+2- El nro de version deben traerlo de la BD cuando se carga el producto y llevarlo hasta la UI/frontend.
+3- Cuando se modifica el producto y subitean el formulario desde el frontend hacia el backend, deben enviar ese nro de version.
+4- En el servicio del back-end deben construir una instancia de Producto utilizando simplemente un new Producto(....).
+5- y luego usan el EntityManager#merge(...).
+
+* */
             TypedQuery<Venta> qv = em.createQuery("select v from Venta v", Venta.class);
             ventas = qv.getResultList();
-            for (Venta venta:
-                 ventas) {
+            for (Venta venta :
+                    ventas) {
                 venta.tocarProductoVendido();
             }
-//            System.out.println("VENTAS 1: "+ventas);
             if (ventas.isEmpty())
                 throw new RuntimeException("No hay ventas registradas.");
-//            System.out.println("VENTAS 2: "+ ventas);
 
             tx.commit();
 

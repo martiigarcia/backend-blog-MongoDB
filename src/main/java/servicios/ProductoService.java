@@ -6,6 +6,7 @@ import modelo.Marca;
 import modelo.Producto;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ProductoService implements ProductoServicio {
@@ -14,7 +15,9 @@ public class ProductoService implements ProductoServicio {
     private EntityManager em;//= emf.createEntityManager();
     private EntityTransaction tx;//= em.getTransaction();
 
+
     public ProductoService(String servicio) {
+
         this.emf = Persistence.createEntityManagerFactory(servicio);
 
     }
@@ -65,7 +68,7 @@ public class ProductoService implements ProductoServicio {
 
     @Override
     public void modificarProducto(Long idProducto, String codigo, String descripcion, float precio, Long IdCategoria,
-            Long IdMarca) {
+                                  Long IdMarca, Long version) {
         this.em = emf.createEntityManager();
         this.tx = em.getTransaction();
         List<Producto> productos;
@@ -79,24 +82,17 @@ public class ProductoService implements ProductoServicio {
             if (productos.isEmpty())
                 throw new RuntimeException("El producto no esta registrado.");
 
-            Producto producto = em.find(Producto.class, idProducto);
-
-            TypedQuery<Producto> qp = em.createQuery("select p from Producto p where p.codigo=:codigo", Producto.class);
-            qp.setParameter("codigo", codigo);
-            if (!qp.getResultList().isEmpty() && !producto.codigo().equals(codigo)) {
-                throw new RuntimeException("Ya Existe este codigo de producto");
-            }
-
             Marca marca = em.find(Marca.class, IdMarca);
             Categoria categoria = em.find(Categoria.class, IdCategoria);
 
-            producto.setCategoria(categoria);
-            producto.setCodigo(codigo);
-            producto.setDescripcion(descripcion);
-            producto.setMarca(marca);
-            producto.setPrecio(precio);
+            Producto producto = new Producto(idProducto, codigo, precio, descripcion, categoria, marca);
 
+            producto.setVersion(version);
+
+            em.merge(producto);
             tx.commit();
+        } catch (OptimisticLockException e) {
+            throw new RuntimeException("El producto se modifico por otro usuario");
 
         } catch (Exception e) {
             tx.rollback();
@@ -113,23 +109,36 @@ public class ProductoService implements ProductoServicio {
 
     @Override
     public List listarProductos() {
-        this.em = emf.createEntityManager();
-        this.tx = em.getTransaction();
-        List<Producto> productos;
+        if (emf.isOpen()) {
+            System.out.println("1");
 
+        }
+        System.out.println("2");
+        this.em = emf.createEntityManager();
+        System.out.println("3");
+        this.tx = em.getTransaction();
+        System.out.println("4");
+
+        List<Producto> productos = new ArrayList<>();
+        System.out.println("5");
         try {
             tx.begin();
-
+            System.out.println("6");
             TypedQuery<Producto> qp = em.createQuery("select p from Producto p", Producto.class);
+            System.out.println("7");
             productos = qp.getResultList();
+            System.out.println("8");
+            System.out.println(productos);
+            System.out.println("9");
             if (productos.isEmpty())
                 throw new RuntimeException("No hay productos registrados.");
-
+            System.out.println("10");
             tx.commit();
-
+            System.out.println("11");
         } catch (Exception e) {
-            tx.rollback();
+            System.out.println("12");
             e.printStackTrace();
+            tx.rollback();
             throw new RuntimeException(e);
 
         } finally {
@@ -141,56 +150,5 @@ public class ProductoService implements ProductoServicio {
         return productos;
     }
 
-    @Override
-    public void crearCategoria(String nombre) {
-        this.em = emf.createEntityManager();
-        this.tx = em.getTransaction();
-
-        try {
-            tx.begin();
-
-           Categoria categoria = new Categoria(nombre);
-            em.persist(categoria);
-
-            tx.commit();
-
-        } catch (Exception e) {
-            tx.rollback();
-            e.printStackTrace();
-            throw new RuntimeException(e);
-
-        } finally {
-            if (em.isOpen())
-                em.close();
-//            if (emf.isOpen())
-//                emf.close();
-        }
-    }
-
-    @Override
-    public void crearMarca(String nombre) {
-        this.em = emf.createEntityManager();
-        this.tx = em.getTransaction();
-
-        try {
-            tx.begin();
-
-            Marca marca = new Marca(nombre);
-            em.persist(marca);
-
-            tx.commit();
-
-        } catch (Exception e) {
-            tx.rollback();
-            e.printStackTrace();
-            throw new RuntimeException(e);
-
-        } finally {
-            if (em.isOpen())
-                em.close();
-//            if (emf.isOpen())
-//                emf.close();
-        }
-    }
 
 }

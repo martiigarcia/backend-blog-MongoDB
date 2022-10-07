@@ -85,30 +85,6 @@ public class PromocionService implements PromocionServicio {
 
     }
 
-   @Override
-    public void crearTienda() {
-        this.em = emf.createEntityManager();
-        this.tx = em.getTransaction();
-
-        try {
-            tx.begin();
-            Tienda tienda = new Tienda();
-            em.persist(tienda);
-
-            tx.commit();
-
-        } catch (Exception e) {
-            tx.rollback();
-            e.printStackTrace();
-            throw new RuntimeException(e);
-
-        } finally {
-            if (em.isOpen())
-                em.close();
-//            if (emf.isOpen())
-//                emf.close();
-        }
-    }
 
 
 }

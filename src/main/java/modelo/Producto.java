@@ -10,27 +10,8 @@ public class Producto {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
-
-    public String getCodigo() {
-        return codigo;
-    }
-
-    public String getDescripcion() {
-        return descripcion;
-    }
-
-    public Categoria getCategoria() {
-        return categoria;
-    }
-
-    public double getPrecio() {
-        return precio;
-    }
-
-    public Marca getMarca() {
-        return marca;
-    }
-
+    @Version
+    private long version;
     //  @Unique
     private String codigo;
     private String descripcion;
@@ -40,7 +21,7 @@ public class Producto {
     @ManyToOne(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
     private Marca marca;
 
-    protected Producto() {
+    public Producto() {
 
     }
 
@@ -70,6 +51,34 @@ public class Producto {
     public Producto(long id, String codigo, double precio, String descripcion, Categoria categoria, Marca marca) throws RuntimeException{
         this(codigo, precio, descripcion, categoria, marca);
         this.id = id;
+    }
+
+    public long getVersion() {
+        return version;
+    }
+
+    public void setVersion(long version) {
+        this.version = version;
+    }
+
+    public String getCodigo() {
+        return codigo;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public Categoria getCategoria() {
+        return categoria;
+    }
+
+    public double getPrecio() {
+        return precio;
+    }
+
+    public Marca getMarca() {
+        return marca;
     }
 
     private boolean esDatoVacio(String dato) {
@@ -142,7 +151,7 @@ public class Producto {
     public Map<String, Object> toMap() {
         HashMap<String, Object> map = new HashMap<String, Object>(
                 Map.of("id", id, "codigo", codigo, "precio", precio, "descripcion", descripcion,
-                        "categoria", categoria, "marca", marca));
+                        "categoria", categoria, "marca", marca, "version", version));
 
         return map;
     }

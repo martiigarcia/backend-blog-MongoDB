@@ -11,6 +11,6 @@ public interface PromocionServicio {
     void crearDescuento(String marcaProducto, LocalDate fechaDesde, LocalDate
             fechaHasta, float porcentaje);
 
-    void crearTienda();
+
 
 }

@@ -1,14 +1,8 @@
 package main;
 
-import api.ClienteServicio;
-import api.ProductoServicio;
-import api.PromocionServicio;
-import api.VentaServicio;
+import api.*;
 import modelo.*;
-import servicios.ClienteService;
-import servicios.ProductoService;
-import servicios.PromocionService;
-import servicios.VentaService;
+import servicios.*;
 import web.WebApi;
 
 import javax.persistence.*;
@@ -22,22 +16,90 @@ public class Main {
         System.out.println(new Date());
         //String persistenceUnit = "objectdb:myDbFile.odb";
         String persistenceUnit = "jpamysql";
-        VentaServicio vs = new VentaService(persistenceUnit);
-        List<Venta> ventas = vs.ventas();
-        System.out.println("VENTAS: " + ventas);
+
+        WebApi servicio =
+                new WebApi(1234,
+                        new ProductoService(persistenceUnit),
+                        new PromocionService(persistenceUnit),
+                        new VentaService(persistenceUnit),
+                        new ClienteService(persistenceUnit),
+                        new CategoriaService(persistenceUnit),
+                        new MarcaSevice(persistenceUnit));
+        servicio.start();
+
+//        ProductoService productoService = new ProductoService(persistenceUnit);
+//        productoService.modificarProducto(11L, "2222", "Pera", 38, 5L, 7L);
+//        productoService.modificarProducto(11L, "2222", "Pera", 40, 5L, 7L);
+
+//        EntityManagerFactory emf = Persistence.createEntityManagerFactory(persistenceUnit); //= Persistence.createEntityManagerFactory("objectdb:myDbFile.odb");
+//        EntityManager em = emf.createEntityManager();
+//        EntityTransaction tx = em.getTransaction();
+//        List<Producto> productos;
 //
+//        try {
+//            tx.begin();
+//
+//            TypedQuery<Producto> q = em.createQuery("select p from Producto p where p.id=:id", Producto.class);
+//            q.setParameter("id", 11L);
+//            productos = q.getResultList();
+//            if (productos.isEmpty())
+//                throw new RuntimeException("El producto no esta registrado.");
+//
+//            Producto producto = em.find(Producto.class, 11L);
+//
+//            TypedQuery<Producto> qp = em.createQuery("select p from Producto p where p.codigo=:codigo", Producto.class);
+//            qp.setParameter("codigo", "2222");
+//            if (!qp.getResultList().isEmpty() && !producto.codigo().equals("2222")) {
+//                throw new RuntimeException("Ya Existe este codigo de producto");
+//            }
+//
+//            Marca marca = em.find(Marca.class, 7L);
+//            Categoria categoria = em.find(Categoria.class, 5l);
+//
+//            producto.setCategoria(categoria);
+//            producto.setCodigo("2222");
+//            producto.setDescripcion("Pera");
+//            producto.setMarca(marca);
+//            producto.setPrecio(40);
+//
+//            long version = producto.getVersion(); // como le decis q # de version queres?
+//            producto.setVersion(version);
+//            em.merge(producto);
+//
+//            tx.commit();
+//
+//        } catch (OptimisticLockException e1) {
+//            throw new RuntimeException("El producto se modifico por otro usuario");
+//
+//        } catch (Exception e) {
+//            tx.rollback();
+//            e.printStackTrace();
+//            throw new RuntimeException(e);
+//
+//        } finally {
+//            if (em.isOpen())
+//                em.close();
+////            if (emf.isOpen())
+////                emf.close();
+//        }
+
 
 //        ClienteServicio clienteServicio = new ClienteService(persistenceUnit);
-//        ProductoService productoService = new ProductoService(persistenceUnit);
 //        PromocionService promocionService = new PromocionService(persistenceUnit);
 //        VentaService ventaService = new VentaService(persistenceUnit);
-//        WebApi servicio =
-//                new WebApi(1234,
-//                        new ProductoService(persistenceUnit),
-//                        new PromocionService(persistenceUnit),
-//                        new VentaService(persistenceUnit),
-//                        new ClienteService(persistenceUnit));
-//        servicio.start();
+//        TiendaServicio tiendaService = new T
+//        iendaService(persistenceUnit);
+//        tiendaService.generarCodigoUnicoVenta(1, 2022);
+//        tiendaService.generarCodigoUnicoVenta(1, 2023);
+
+//        VentaServicio vs = new VentaService(persistenceUnit);
+//        List<Long>productos = new ArrayList<>();
+//        productos.add(10L);
+//        vs.realizarVenta(1L, productos, 3L);
+
+//        List<Venta> ventas = vs.ventas();
+//        System.out.println("VENTAS: " + ventas);
+//
 //        try {
 
 //            ClienteServicio sc = new ClienteService(persistenceUnit);

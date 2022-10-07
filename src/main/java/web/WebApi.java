@@ -6,14 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import api.ClienteServicio;
-import api.ProductoServicio;
-import api.VentaServicio;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import api.*;
 import exceptions.ClienteException;
 import io.javalin.Javalin;
-import io.javalin.core.util.Header;
 import io.javalin.http.Handler;
 import modelo.*;
 import servicios.PromocionService;
@@ -34,18 +29,26 @@ public class WebApi {
     //      <span> en HTML.
 
 
-    private ProductoServicio productos;
+    private ProductoServicio productoServicio;
     private PromocionService promocionService;
     private ClienteServicio clienteServicio;
     private VentaServicio ventaServicio;
     private int webPort;
+    private CategoriaServicio categoriaServicio;
+    private MarcaServicio marcaServicio;
+    private List<Producto> productosList;
 
-    public WebApi(int webPort, ProductoServicio productos, PromocionService promocionService, VentaService ventaServicio, ClienteServicio clienteServicio) {
+    public WebApi(int webPort, ProductoServicio productoServicio,
+                  PromocionService promocionService, VentaService ventaServicio,
+                  ClienteServicio clienteServicio, CategoriaServicio categoriaServicio, MarcaServicio marcaServicio) {
         this.webPort = webPort;
-        this.productos = productos;
+        this.productoServicio = productoServicio;
         this.promocionService = promocionService;
         this.clienteServicio = clienteServicio;
         this.ventaServicio = ventaServicio;
+        this.categoriaServicio = categoriaServicio;
+        this.productosList = new ArrayList<>();
+        this.marcaServicio = marcaServicio;
     }
 
     public void start() {
@@ -54,10 +57,15 @@ public class WebApi {
             config.enableCorsForAllOrigins();
         }).start(this.webPort);
         //posts y gets
+       // app.get("/obtenerProducto", this.getProducto());
         app.get("/productos", this.listarProductos());
+        app.post("/update-producto", this.updateProducto());
         app.get("/tarjetas", this.listarTarjetas());
         app.post("/calcularmonto", this.precioTotal());
         app.post("/pagar", this.comprar());
+        app.get("/ventas", this.listarVentas());
+        app.get("/categorias", this.listarCategorias());
+        app.get("/marcas", this.listarMarcas());
 
         //excepciones
         app.exception(ClienteException.class, (e, ctx) -> {
@@ -68,22 +76,114 @@ public class WebApi {
 
         app.exception(Exception.class, (e, ctx) -> {
             e.printStackTrace();
-            ctx.json(Map.of("result", "error", "message", "Ups... algo se rompió.: " + e.getMessage()));
+            ctx.json(Map.of("result", "error", "message", "Ups... algo se rompió: " + e.getMessage()));
             // log error in a stream...
         });
+    }
+
+    /*public Handler getProducto() throws RuntimeException {
+        return ctx -> {
+
+            String idProducto = ctx.queryParam("id_producto");
+            System.out.println("idProducto: "+idProducto);
+            if (idProducto == null)
+                throw new RuntimeException("Se debe ingresar un producto.");
+
+            Long id = Long.valueOf(idProducto);
+            System.out.println("id: "+id);
+            Producto producto = null;
+
+            System.out.println("size: "+this.productosList.size());
+            for (Producto productoX : this.productosList) {
+                System.out.println("entra al for");
+                if (id == productoX.getId()) {
+                    System.out.println(id + " - " + productoX.getId());
+                    producto = productoX;
+                }
+                //System.out.println(id + " - " + productoX.getId());
+            }
+            if(producto == null)
+                throw new RuntimeException("No existe un producto con el id ingresado");
+
+            ctx.json(Map.of("result", "success", "producto", producto));
+
+        };
+    }*/
+
+    public Handler updateProducto() {
+        return ctx -> {
+
+            ProductoDTO producto = ctx.bodyAsClass(ProductoDTO.class); //agregar version
+
+//            System.out.println(producto.getId());
+//            System.out.println(producto.getCodigo());
+//            System.out.println(producto.getDescripcion());
+//            System.out.println(producto.getPrecio());
+
+            this.productoServicio.modificarProducto(producto.getId(), producto.getCodigo(),
+                    producto.getDescripcion(), (float) producto.getPrecio(),
+                    producto.getCategoria().getId(),producto.getMarca().getId(), producto.getVersion());
+
+            ctx.json(Map.of("result", "success"));
+
+        };
     }
 
     public Handler listarProductos() {
         return ctx -> {
 
-            List<Producto> productosList = this.productos.listarProductos();
-
+            this.productosList = this.productoServicio.listarProductos();
+            System.out.println(productosList);
             var list = new ArrayList<Map<String, Object>>();
             for (Producto producto : productosList) {
                 list.add(producto.toMap());
             }
 
             ctx.json(Map.of("result", "success", "productos", list));
+
+        };
+    }
+
+    public Handler listarVentas() {
+        return ctx -> {
+
+            List<Venta> ventaList = this.ventaServicio.ventas();
+
+            var list = new ArrayList<Map<String, Object>>();
+            for (Venta venta : ventaList) {
+                list.add(venta.toMap());
+            }
+
+            ctx.json(Map.of("result", "success", "ventas", list));
+
+        };
+    }
+
+    public Handler listarCategorias() {
+        return ctx -> {
+
+            List<Categoria> categoriaList = this.categoriaServicio.listarCategorias();
+            System.out.println(categoriaList);
+            var list = new ArrayList<Map<String, Object>>();
+            for (Categoria categoria : categoriaList) {
+                list.add(categoria.toMap());
+            }
+
+            ctx.json(Map.of("result", "success", "categorias", list));
+
+        };
+    }
+    public Handler listarMarcas() {
+        return ctx -> {
+
+            List<Marca> marcaList = this.marcaServicio.listarMarcas();
+            System.out.println(marcaList);
+            var list = new ArrayList<Map<String, Object>>();
+            for (Marca marca : marcaList) {
+                list.add(marca.toMap());
+            }
+
+            ctx.json(Map.of("result", "success", "marcas", list));
 
         };
     }
@@ -103,7 +203,7 @@ public class WebApi {
         };
     }
 
-    public Handler precioTotal() throws RuntimeException{
+    public Handler precioTotal() throws RuntimeException {
         return ctx -> {
 
             Map<String, List<String>> parametros = ctx.queryParamMap();
@@ -124,14 +224,14 @@ public class WebApi {
         };
     }
 
-    public Handler comprar() throws RuntimeException{
+    public Handler comprar() throws RuntimeException {
         return ctx -> {
             Map<String, List<String>> parametros = ctx.queryParamMap();
 
             String prod = parametros.get("productos").get(0);
             String tarj = parametros.get("tarjeta").get(0);
 
-           
+
             if (prod.isEmpty())
                 throw new RuntimeException("No se puede generar la compra sin productos seleccionados.");
             if (tarj.isEmpty())

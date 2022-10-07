@@ -1,5 +1,6 @@
 package api;
 
+import modelo.Categoria;
 import modelo.Producto;
 
 import java.util.List;
@@ -9,10 +10,11 @@ public interface ProductoServicio {
     void crearProducto(String codigo, String descripcion, float precio, Long IdCategoría, Long IdMarca);
 
     //validar que sea un producto existente
-    void modificarProducto(Long idProducto, String codigo, String descripcion, float precio, Long IdCategoria, Long IdMarca);
+    void modificarProducto(Long idProducto, String codigo, String descripcion, float precio, Long IdCategoria, Long IdMarca, Long version);
     //Devuelve todos los productos
     List<Producto> listarProductos();
-    void crearCategoria(String nombre);
-    void crearMarca(String nombre);
+
+
+
 
 }

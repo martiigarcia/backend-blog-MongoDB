@@ -14,55 +14,63 @@ public class ProductoDTO {
     private CategoriaDTO categoria;
     private double precio;
     private MarcaDTO marca;
-
     private long id;
 
-    public long id() {
-        return id;
+    private long version;
+
+    public long getVersion() {
+        return version;
     }
 
-    public void setId(long id) {
-        this.id = id;
+    public void setVersion(long version) {
+        this.version = version;
+    }
+
+    public String getCodigo() {
+        return codigo;
     }
 
     public void setCodigo(String codigo) {
         this.codigo = codigo;
     }
 
+    public String getDescripcion() {
+        return descripcion;
+    }
+
     public void setDescripcion(String descripcion) {
         this.descripcion = descripcion;
+    }
+
+    public CategoriaDTO getCategoria() {
+        return categoria;
     }
 
     public void setCategoria(CategoriaDTO categoria) {
         this.categoria = categoria;
     }
 
+    public double getPrecio() {
+        return precio;
+    }
+
     public void setPrecio(double precio) {
         this.precio = precio;
+    }
+
+    public MarcaDTO getMarca() {
+        return marca;
     }
 
     public void setMarca(MarcaDTO marca) {
         this.marca = marca;
     }
 
-    public String codigo() {
-        return codigo;
+    public long getId() {
+        return id;
     }
 
-    public String descripcion() {
-        return descripcion;
+    public void setId(long id) {
+        this.id = id;
     }
-
-    public MarcaDTO marca() {
-        return marca;
-    }
-
-    public CategoriaDTO categoria() {
-        return categoria;
-    }
-
-    public double precio() {
-        return precio;
-    }
-
 }
