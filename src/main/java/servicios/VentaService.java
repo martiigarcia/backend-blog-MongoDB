@@ -1,9 +1,14 @@
 package servicios;
 
 import api.VentaServicio;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import modelo.*;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 
 import javax.persistence.*;
+import java.lang.reflect.Type;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -84,6 +89,11 @@ public class VentaService implements VentaServicio {
             venta.setNumeroVenta(numeroVenta.crearCodigo());
             tienda.agregarVenta(venta);
 
+            JedisPool pool = new JedisPool("localhost", 6379);
+            Jedis jedis = pool.getResource();
+            jedis.del("user:"+ idCliente);
+
+            jedis.close();
             tx.commit();
 
         } catch (Exception e) {
@@ -160,16 +170,7 @@ public class VentaService implements VentaServicio {
         List<Venta> ventas;
         try {
             tx.begin();
-/* *
 
-Por otro lado, para poder hacer funcionar el ejercicio sobre OptimisticLock con JPA, necesitan tener presente lo siguiente:
-1- Utilizar el método merge del EntityManager
-2- El nro de version deben traerlo de la BD cuando se carga el producto y llevarlo hasta la UI/frontend.
-3- Cuando se modifica el producto y subitean el formulario desde el frontend hacia el backend, deben enviar ese nro de version.
-4- En el servicio del back-end deben construir una instancia de Producto utilizando simplemente un new Producto(....).
-5- y luego usan el EntityManager#merge(...).
-
-* */
             TypedQuery<Venta> qv = em.createQuery("select v from Venta v", Venta.class);
             ventas = qv.getResultList();
             for (Venta venta :
@@ -193,6 +194,79 @@ Por otro lado, para poder hacer funcionar el ejercicio sobre OptimisticLock con 
 //                emf.close();
         }
         return ventas;
+    }
+
+    @Override
+    public List ultimasVentas(Long idCliente) {
+        this.em = emf.createEntityManager();
+        this.tx = em.getTransaction();
+        List<Cliente> clientes = new ArrayList<>();
+        List<Venta> ventas = new ArrayList<>();
+        List<Venta> ventasRetorno = new ArrayList<>();
+        Gson gson = new Gson();
+
+        try {
+            JedisPool pool = new JedisPool("localhost", 6379);
+            Jedis jedis = pool.getResource();
+            //jedis.del("user:"+ idCliente);
+
+            String ventasJson = jedis.hget("user:" + idCliente, "ventas");
+
+            System.out.println(ventasJson);
+
+            if (ventasJson == null) {
+//                System.out.println("Entra");
+                this.tx.begin();
+
+                TypedQuery<Venta> q = this.em.createQuery("SELECT v FROM Venta v WHERE v.cliente=" + idCliente + " ORDER BY v.id DESC ", Venta.class);
+                ventas = q.getResultList();
+
+                if (ventas.isEmpty())
+                    throw new RuntimeException("No existen ventas registradas para el cliente solicitado");
+
+                int tamanio = ventas.size();
+
+                if (tamanio >= 3) {
+                    ventasRetorno.add(ventas.get(0));
+                    ventasRetorno.add(ventas.get(1));
+                    ventasRetorno.add(ventas.get(2));
+                } else if (tamanio == 2) {
+                    ventasRetorno.add(ventas.get(0));
+                    ventasRetorno.add(ventas.get(1));
+                } else {
+                    ventasRetorno.add(ventas.get(0));
+                }
+
+                for (Venta venta :
+                        ventasRetorno) {
+                    venta.tocarProductoVendido();
+                }
+                String json = gson.toJson(ventasRetorno);
+                jedis.hset("user:" + idCliente, "ventas", json);
+
+                this.tx.commit();
+
+            } else {
+//                System.out.println("NO ENTRA");
+                Type tipo = new TypeToken<List<Venta>>() {
+                }.getType();
+                ventasRetorno = gson.fromJson(ventasJson, tipo);
+//                System.out.println("VENTAS DEL JSON PARSEADAS A LISTA DE NUEVO: ");
+//                System.out.println(ventasRetorno);
+            }
+
+
+        } catch (Exception e) {
+            this.tx.rollback();
+            throw new RuntimeException(e);
+
+        } finally {
+            if (this.em.isOpen())
+                this.em.close();
+//            if (this.emf.isOpen())
+//                this.emf.close();
+        }
+        return ventasRetorno;
     }
 }
 

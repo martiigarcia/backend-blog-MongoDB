@@ -4,6 +4,7 @@ import api.ClienteServicio;
 import modelo.Cliente;
 import modelo.Tarjeta;
 import modelo.TipoTarjeta;
+import modelo.Venta;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -172,4 +173,6 @@ public class ClienteService implements ClienteServicio {
         }
         return tarjetas;
     }
+
+
 }

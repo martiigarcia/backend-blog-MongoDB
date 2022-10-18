@@ -8,6 +8,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="pruebaTp" />
         <module name="pruebaTp - versionado - concurrencia" />
+        <module name="pruebaTp - jedis" />
       </profile>
     </annotationProcessing>
   </component>

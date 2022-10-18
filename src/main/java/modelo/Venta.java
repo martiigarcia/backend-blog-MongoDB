@@ -111,7 +111,7 @@ public class Venta {
     private void agregarProductos(List<Producto> productos) {
         productos.forEach(producto ->
                 this.productosVendidos.add(
-                        new ProductoVendido(producto.codigo(), producto.precio()
+                        new ProductoVendido(producto.codigo(), producto.precio(), producto.descripcion()
                         )));
 
     }
@@ -140,8 +140,8 @@ public class Venta {
     }
     @Override
     public String toString() {
-        return "Venta{" +
-                "cliente=" + cliente +
+        return "Venta id: "+id+" {" +
+                "cliente=" + cliente.getNombre() +
                 ", productosVendidos=" + productosVendidos +
                 ", montoAbonado=" + montoAbonado +
                 '}';

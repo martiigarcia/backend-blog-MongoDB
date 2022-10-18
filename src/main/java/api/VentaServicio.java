@@ -19,4 +19,6 @@ public interface VentaServicio {
     //Devuelve todas las ventas realizadas
 
     List<Venta> ventas();
+
+    List ultimasVentas(Long idCliente);
 }

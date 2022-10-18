@@ -16,4 +16,6 @@ public interface ClienteServicio {
     //Devuelve las tarjetas de un cliente específico
     List listarTarjetas(Long idCliente);
 
+
+
 }
