@@ -1,0 +1,5 @@
+DUDAS:
+
+- preguntar por "byauthor"
+- no funciona totalmente el fronted
+- cambiar relatedLinks y tags a lista de strings

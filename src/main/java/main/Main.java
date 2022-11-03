@@ -1,91 +1,80 @@
 package main;
 
-import api.*;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import modelo.*;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import servicios.*;
-import web.WebApi;
 
-import javax.persistence.*;
-import java.lang.reflect.Type;
+import api.PageService;
+import com.mongodb.client.model.Indexes;
+import modelo.Page;
+import servicios.PageServicio;
+import servicios.PostServicio;
+import web.WebApi;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
+import com.mongodb.ServerAddress;
+
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.MongoCollection;
+
+import org.bson.Document;
+
 import java.time.LocalDate;
-import java.util.*;
+import java.time.ZoneId;
+import java.util.Arrays;
+
+import com.mongodb.Block;
+
+import com.mongodb.client.MongoCursor;
+
+import static com.mongodb.client.model.Filters.*;
+
+import com.mongodb.client.result.DeleteResult;
+
+import static com.mongodb.client.model.Updates.*;
+
+import com.mongodb.client.result.UpdateResult;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println(new Date());
-        String persistenceUnit = "jpamysql";
 
-        VentaService ventaService = new VentaService(persistenceUnit);
+
+//        WebApi servicio =
+//                new WebApi(1234);
+//        servicio.start();
+
+
+//        MongoClient mongoClient = new MongoClient();
+//        MongoDatabase database = mongoClient.getDatabase("blog");
+//        MongoCollection<Document> collectionPage = database.getCollection("page");
+//        MongoCollection<Document> collectionPost = database.getCollection("post");
+
+
+        //AGREGO UNA PAGINA:
+
+//        Document doc = new Document("title", "Pagina 1")
+//                .append("text", "Texto de pagina 1 ...")
+//                .append("author", "Marti")
+//                .append("date", Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+//        collectionPage.insertOne(doc);
+
+        //AGREGO UN POST:
+
+//        Document doc = new Document("title", "Post 1")
+//                .append("text", "Texto de post 1 ...")
+//                .append("author", "Marti")
+//                .append("tags", "tags...")
+//                .append("resume", "resumen...")
+//                .append("relatedLinks", "links...")
+//                .append("date", Date.from(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+//        collectionPost.insertOne(doc);
 
         WebApi servicio =
-                new WebApi(1234,
-                        new ProductoService(persistenceUnit),
-                        new PromocionService(persistenceUnit),
-                        new VentaService(persistenceUnit),
-                        new ClienteService(persistenceUnit),
-                        new CategoriaService(persistenceUnit),
-                        new MarcaSevice(persistenceUnit));
+                new WebApi(1234, new PageServicio(), new PostServicio());
         servicio.start();
 
-        List<Venta> ventaList = ventaService.ultimasVentas(1L);
-        System.out.println(ventaList);
+//       ID PAGINA: "635da6a61d745a244b4f3349"
+
     }
 }
-
-
-//        Gson gson = new Gson();
-//        //String json = gson.toJson(ventaList);
-////        System.out.println("JSON DE VENTAS PARA PONER EN REDIS: ");
-////        System.out.println(json);
-//
-//        try {
-//            JedisPool pool = new JedisPool("localhost", 6379);
-//            Jedis jedis = pool.getResource();
-//
-//            //jedis.hset("user:" + 1, "ventas", json);
-//
-//            String ventasJson = jedis.hget("user:" + 2, "ventas");
-//            if(ventasJson == null){
-//                //codigo del servicio
-//            }else {
-//                Type tipo = new TypeToken<List<Venta>>() {
-//                }.getType();
-//                List<Venta> lista = gson.fromJson(ventasJson, tipo);
-//                System.out.println("VENTAS DEL JSON PARSEADAS A LISTA DE NUEVO: ");
-//                System.out.println(lista);
-//            }
-
-//            jedis.set("clientName", "Marti");
-//            jedis.sadd("planets", "Venus", "Marte", "Tierra");
-//            jedis.sadd("planets", "Saturno");
-//            System.out.println(jedis.get("clientName"));
-//           // System.out.println(jedis.get("planets"));
-//            System.out.println(jedis.scard("planets") + " elements");
-//            Set<String> planets = jedis.smembers("planets");
-//            for (String planet: planets) {
-//                System.out.println(planet);
-//            }
-//
-//            jedis.del("students:ggvd");
-//
-//            // SADD, SREM, SCARD and SMEMBERS
-//            jedis.sadd("students:ggvd", "student1", "student2", "student3");
-//            jedis.srem("students:ggvd", "student3");
-//            System.out.println(jedis.scard("students:ggvd") + " elements");
-//            Set<String> students = jedis.smembers("students:ggvd");
-//
-//            // Print the list
-//            for (String student: students) {
-//                System.out.println(student);
-//            }
-//        }catch (Exception e){
-//            throw new RuntimeException("Error: "+ e.getMessage());
-//        }
-
-
-
-

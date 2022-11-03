@@ -1,6 +1,8 @@
 package exceptions;
 
+
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,7 +16,7 @@ public class NotNullNotEmptyException {
     }
 
     public NotNullNotEmptyException(String k1, String v1) {
-        System. out. println(v1);
+        System.out.println(v1);
         if (nullOrEmpty(v1)) {
             this.errors.put(k1, MSG);
         }
@@ -33,6 +35,7 @@ public class NotNullNotEmptyException {
 
 
     }
+
     public NotNullNotEmptyException(String k1, String v1, String k2,
                            String v2, String k3, String v3) {
         if (nullOrEmpty(v1)) {
@@ -48,9 +51,24 @@ public class NotNullNotEmptyException {
         }
     }
 
+    public NotNullNotEmptyException(String k1, String v1, String k2,
+                                    String v2, String k3, String v3, String k4, Date v4) {
+        if (nullOrEmpty(v1)) {
+            this.errors.put(k1, MSG);
+        }
+        if (nullOrEmpty(v2)) {
+            this.errors.put(k2, MSG);
+        }
+        if (nullOrEmpty(v3)) {
+            this.errors.put(k3, MSG);
+        }
+        if (nullOrEmpty(v4.toString())) {
+            this.errors.put(k4, MSG);
+        }
+    }
     public void throwOnError() {
         if (this.hasErrors()) {
-            //throw new EstudianteException(this.toMap());
+            throw new ModeloException(this.toMap());
         }
     }
 

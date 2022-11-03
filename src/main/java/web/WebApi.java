@@ -6,69 +6,46 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import api.*;
-import exceptions.ClienteException;
+import api.PageService;
+import api.PostService;
+import exceptions.ModeloException;
 import io.javalin.Javalin;
 import io.javalin.http.Handler;
-import modelo.*;
-import servicios.PromocionService;
-import servicios.VentaService;
+import org.bson.Document;
+import org.bson.types.ObjectId;
+
 
 public class WebApi {
 
 
-    //- Mostrará todos los productos (en un JList por ejemplo si utilizan Swing o
-    //      un Select HTML de selección múltiple), permitiendo seleccionar uno o varios.
-    //- Mostrará todas las tarjetas de crédito del cliente (en un Jlist o Select
-    //      HTML) (iniciemos la aplicación seleccionando un cliente cualquiera pasando
-    //      el ID por parámetro). Permitiendo elegir una para pagar.
-    //- Permitirá revisar el monto total hasta el momento de los productos
-    //      seleccionados (mediante un botón “precio total”).
-    //- Permitirá realizar la compra (mediante otro botón).
-    // - Mostrará los mensajes de error utilizando un JOptionPane en Swing o
-    //      <span> en HTML.
-
-
-    private ProductoServicio productoServicio;
-    private PromocionService promocionService;
-    private ClienteServicio clienteServicio;
-    private VentaServicio ventaServicio;
     private int webPort;
-    private CategoriaServicio categoriaServicio;
-    private MarcaServicio marcaServicio;
-    private List<Producto> productosList;
+    private PageService pageService;
+    private PostService postService;
 
-    public WebApi(int webPort, ProductoServicio productoServicio,
-                  PromocionService promocionService, VentaService ventaServicio,
-                  ClienteServicio clienteServicio, CategoriaServicio categoriaServicio, MarcaServicio marcaServicio) {
+
+    public WebApi(int webPort, PageService pageService, PostService postService) {
         this.webPort = webPort;
-        this.productoServicio = productoServicio;
-        this.promocionService = promocionService;
-        this.clienteServicio = clienteServicio;
-        this.ventaServicio = ventaServicio;
-        this.categoriaServicio = categoriaServicio;
-        this.productosList = new ArrayList<>();
-        this.marcaServicio = marcaServicio;
+        this.pageService = pageService;
+        this.postService = postService;
     }
 
     public void start() {
+
         Javalin app = Javalin.create(config ->
         {
             config.enableCorsForAllOrigins();
         }).start(this.webPort);
         //posts y gets
-       // app.get("/obtenerProducto", this.getProducto());
-        app.get("/productos", this.listarProductos());
-        app.post("/update-producto", this.updateProducto());
-        app.get("/tarjetas", this.listarTarjetas());
-        app.post("/calcularmonto", this.precioTotal());
-        app.post("/pagar", this.comprar());
-        app.get("/ventas", this.listarVentas());
-        app.get("/categorias", this.listarCategorias());
-        app.get("/marcas", this.listarMarcas());
+        app.get("/pages/{id}", this.getPage());
+        app.get("/posts/latest", this.getLastestPosts());
+        app.get("/posts/{id}", this.getPost());
+        app.get("/byauthor", this.getByAuthor());//nombre de autor y cantidad de posteos --> calcular
+        app.get("/posts/author/{nombreautor}", this.getPostsByAuthor());
+        app.get("/search/{text}", this.searchPost());
+
 
         //excepciones
-        app.exception(ClienteException.class, (e, ctx) -> {
+        app.exception(ModeloException.class, (e, ctx) -> {
             e.printStackTrace();
             ctx.json(Map.of("result", "error", "errors", e.toMap()));
             // log error in a stream...
@@ -81,167 +58,78 @@ public class WebApi {
         });
     }
 
-    /*public Handler getProducto() throws RuntimeException {
+    private Handler getPage() {
         return ctx -> {
 
-            String idProducto = ctx.queryParam("id_producto");
-            System.out.println("idProducto: "+idProducto);
-            if (idProducto == null)
-                throw new RuntimeException("Se debe ingresar un producto.");
+            String id = ctx.pathParam("id"); // con esto recibe el parametro de la ruta pages/id
 
-            Long id = Long.valueOf(idProducto);
-            System.out.println("id: "+id);
-            Producto producto = null;
+            String doc = pageService.findPage(id);
+            System.out.println(doc);
 
-            System.out.println("size: "+this.productosList.size());
-            for (Producto productoX : this.productosList) {
-                System.out.println("entra al for");
-                if (id == productoX.getId()) {
-                    System.out.println(id + " - " + productoX.getId());
-                    producto = productoX;
-                }
-                //System.out.println(id + " - " + productoX.getId());
-            }
-            if(producto == null)
-                throw new RuntimeException("No existe un producto con el id ingresado");
-
-            ctx.json(Map.of("result", "success", "producto", producto));
-
-        };
-    }*/
-
-    public Handler updateProducto() {
-        return ctx -> {
-
-            ProductoDTO producto = ctx.bodyAsClass(ProductoDTO.class); //agregar version
-
-//            System.out.println(producto.getId());
-//            System.out.println(producto.getCodigo());
-//            System.out.println(producto.getDescripcion());
-//            System.out.println(producto.getPrecio());
-
-            this.productoServicio.modificarProducto(producto.getId(), producto.getCodigo(),
-                    producto.getDescripcion(), (float) producto.getPrecio(),
-                    producto.getCategoria().getId(),producto.getMarca().getId(), producto.getVersion());
-
-            ctx.json(Map.of("result", "success"));
+            ctx.json(doc);
 
         };
     }
 
-    public Handler listarProductos() {
+    private Handler getPost() {
         return ctx -> {
 
-            this.productosList = this.productoServicio.listarProductos();
-            System.out.println(productosList);
-            var list = new ArrayList<Map<String, Object>>();
-            for (Producto producto : productosList) {
-                list.add(producto.toMap());
-            }
+            String id = ctx.pathParam("id"); // con esto recibe el parametro de la ruta pages/id
 
-            ctx.json(Map.of("result", "success", "productos", list));
+            String doc = postService.findPost(id);
+            System.out.println(doc);
+
+            ctx.json(doc);
+
+        };
+
+    }
+
+    private Handler getLastestPosts() {
+        return ctx -> {
+
+            String doc = postService.findLatestPosts();
+            System.out.println(doc);
+
+            ctx.json(doc);
 
         };
     }
 
-    public Handler listarVentas() {
+    private Handler getByAuthor() {
         return ctx -> {
 
-            List<Venta> ventaList = this.ventaServicio.ventas();
+            String doc = postService.findByAuthor();
+            System.out.println(doc);
 
-            var list = new ArrayList<Map<String, Object>>();
-            for (Venta venta : ventaList) {
-                list.add(venta.toMap());
-            }
-
-            ctx.json(Map.of("result", "success", "ventas", list));
+            ctx.json(doc);
 
         };
     }
 
-    public Handler listarCategorias() {
+    private Handler getPostsByAuthor() {
         return ctx -> {
 
-            List<Categoria> categoriaList = this.categoriaServicio.listarCategorias();
-            System.out.println(categoriaList);
-            var list = new ArrayList<Map<String, Object>>();
-            for (Categoria categoria : categoriaList) {
-                list.add(categoria.toMap());
-            }
+            String author = ctx.pathParam("nombreautor"); // con esto recibe el parametro de la ruta pages/id
 
-            ctx.json(Map.of("result", "success", "categorias", list));
+            String doc = postService.findPostByAuthor(author);
+            System.out.println(doc);
 
-        };
-    }
-    public Handler listarMarcas() {
-        return ctx -> {
-
-            List<Marca> marcaList = this.marcaServicio.listarMarcas();
-            System.out.println(marcaList);
-            var list = new ArrayList<Map<String, Object>>();
-            for (Marca marca : marcaList) {
-                list.add(marca.toMap());
-            }
-
-            ctx.json(Map.of("result", "success", "marcas", list));
+            ctx.json(doc);
 
         };
     }
 
-    public Handler listarTarjetas() {
+    private Handler searchPost() {
         return ctx -> {
+            String text = ctx.pathParam("text"); // con esto recibe el parametro de la ruta pages/id
 
-            List<Tarjeta> tarjetaList = this.clienteServicio.listarTarjetas(1L);
+            System.out.println(text);
 
-            var list = new ArrayList<Map<String, Object>>();
-            for (Tarjeta tarjeta : tarjetaList) {
-                list.add(tarjeta.toMap());
-            }
+            String doc = postService.searchPosts(text);
+            System.out.println(doc);
 
-            ctx.json(Map.of("result", "success", "tarjetas", list));
-
-        };
-    }
-
-    public Handler precioTotal() throws RuntimeException {
-        return ctx -> {
-
-            Map<String, List<String>> parametros = ctx.queryParamMap();
-
-            String prod = parametros.get("productos").get(0);
-            String tarj = parametros.get("tarjeta").get(0);
-
-            if (prod.isEmpty())
-                throw new RuntimeException("No se puede calcular el monto sin productos seleccionados.");
-            if (tarj.isEmpty())
-                throw new RuntimeException("No se puede calcular el monto sin una tarjeta seleccionada seleccionados.");
-
-            List<Long> productosLong = Arrays.asList(prod.split(",")).stream().map(s -> Long.parseLong(s.trim())).collect(Collectors.toList());
-            float monto = this.ventaServicio.calcularMonto(productosLong, Long.valueOf(tarj));
-
-            ctx.json(Map.of("result", "success", "monto", monto));
-
-        };
-    }
-
-    public Handler comprar() throws RuntimeException {
-        return ctx -> {
-            Map<String, List<String>> parametros = ctx.queryParamMap();
-
-            String prod = parametros.get("productos").get(0);
-            String tarj = parametros.get("tarjeta").get(0);
-
-
-            if (prod.isEmpty())
-                throw new RuntimeException("No se puede generar la compra sin productos seleccionados.");
-            if (tarj.isEmpty())
-                throw new RuntimeException("No se puede generar la compra sin una tarjeta seleccionada seleccionados.");
-
-            List<Long> productosLong = Arrays.asList(prod.split(",")).stream().map(s -> Long.parseLong(s.trim())).collect(Collectors.toList());
-            this.ventaServicio.realizarVenta(1L, productosLong, Long.valueOf(tarj));
-
-
-            ctx.json(Map.of("result", "success"));
+            ctx.json(doc);
 
         };
     }

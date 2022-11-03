@@ -1,13 +1,12 @@
 package exceptions;
-
 import java.util.Map;
 
-public class ClienteException extends RuntimeException{
+public class PageException extends RuntimeException {
 
 
     private Map<String, String> errors;
 
-    public ClienteException(Map<String, String> errors) {
+    public PageException(Map<String, String> errors) {
         this.errors = errors;
     }
 
